@@ -74,7 +74,6 @@ D1 foundat 1 0.1690
 D1 futur 1 0.1690
 D1 modern 1 0.1690
 D1 llms. 1 0.1690
-doc term frequency weight
 D2 advent 1 0.1408
 D2 transformer-bas 3 0.4225
 D2 architectures, 1 0.1408
@@ -185,7 +184,6 @@ D2 demonstr 1 0.0663
 D2 propos 1 0.0571
 D2 framework 1 0.1003
 D2 competit 1 0.1408
-doc term frequency weight
 D3 scientif 4 0.6761
 D3 research, 1 0.1204
 D3 abil 1 0.1690
@@ -297,7 +295,6 @@ D3 highlight 1 0.1690
 D3 need 1 0.1690
 D3 better 1 0.1690
 D3 approach 1 0.0954
-doc term frequency weight
 D4 larg 1 0.0568
 D4 languag 1 0.0682
 D4 model 2 0.0860
@@ -386,7 +383,6 @@ D4 consider 1 0.1207
 D4 cost 1 0.0860
 D4 also 1 0.0568
 D4 retain 1 0.1207
-doc term frequency weight
 D5 dens 2 0.2408
 D5 embedding-bas 1 0.1204
 D5 retriev 2 0.1370
@@ -490,7 +486,6 @@ D5 4.2% 1 0.1690
 D5 (ndcg@10) 1 0.1690
 D5 dl19 1 0.1690
 D5 benchmarks. 1 0.1690
-doc term frequency weight
 D6 queri 2 0.0884
 D6 expans 4 0.2676
 D6 (qe) 1 0.0939
