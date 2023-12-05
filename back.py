@@ -213,7 +213,6 @@ def BM25(query_tokens,inverse_doc,K=1.5,B=0.75,N=6):
     return pd.DataFrame(result.items(),columns=["Doc","Relevance"]).reset_index(drop=True) 
 
 
-
 def is_valid_query(query):
     
     tokens = [f"'{token}'" if token.lower() not in ("and", "or", "not") else token.lower() for token in query.split()]

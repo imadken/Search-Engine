@@ -1,21 +1,10 @@
 import gradio as gr
 import pandas as pd
-from back import load_descripteurs_and_inverse , process_query , Scalar ,Cosine , Jaccard ,RSV,BM25
+from back import load_descripteurs_and_inverse , process_query ,RSV
 from re import escape
 import nltk
 porter_stemmer = nltk.PorterStemmer()
 lanc_stemmer = nltk.LancasterStemmer()
-
-
-# Sample data (replace this with your data)
-# data = {
-#     'term': ['apple', 'orange', 'banana'],
-#     'document_id': [1, 2, 3],
-#     'frequency': [5, 3, 2],
-#     'weight': [0.8, 0.6, 0.4]
-# }
-
-# df = pd.DataFrame(data)
 
 # Gradio interface
 
