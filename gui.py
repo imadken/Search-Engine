@@ -12,7 +12,7 @@ lanc_stemmer = nltk.LancasterStemmer()
 processed_docs_dict = load_descripteurs_and_inverse()
 
 
-def search_engine(search_term, tokenization, lancester, display_option, Search_Method,pertinence,Vector_space_model):
+def search_engine(search_term, tokenization, lancester, display_option, Search_Method,pertinence,Vector_space_model,K,B):
     global processed_docs_dict
 
     # retrieve inputs
@@ -26,7 +26,7 @@ def search_engine(search_term, tokenization, lancester, display_option, Search_M
     if pertinence == True and search_term!="":
         
         query = process_query(search_term,tokenize=words,stemming=stem)
-        result_df = RSV(query , processed_docs_dict[f"inverse_{words}_{stem}"] ,Vector_space_model,search_term,stem )
+        result_df = RSV(query , processed_docs_dict[f"inverse_{words}_{stem}"] ,Vector_space_model,search_term,stem,K,B)
 
     
     elif pertinence== True and search_term=="":
@@ -78,8 +78,10 @@ iface = gr.Interface(
         gr.Dropdown(label="Search Method", choices=[
                     "Whole word", "Starts with", "Contains"], value="Contains"),
         gr.Checkbox(label="Pertinence"),
-        gr.Dropdown(label="Vector space model", choices=[
+        gr.Dropdown(label="Model", choices=[
                     "Scalar", "Cosine", "Jaccard","BM25","Bool"], value="Scalar"),
+        gr.Number(label="K",value=2.0),
+        gr.Number(label="B",value=1.5)
     ],
     outputs=gr.HTML(),
     live=True,

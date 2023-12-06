@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import nltk
 from math import sqrt,log10
-import re
+from Bool import Boolean_model
 
 
 def load_processed_docs(folder_path):
@@ -188,7 +188,7 @@ def docs_size(inverse_doc):
         dl[doc] = doc_size(doc,inverse_doc)
     return dl    
 
-def BM25(query_tokens,inverse_doc,K=1.5,B=0.75,N=6):
+def BM25(query_tokens,inverse_doc,K=2,B=1.5,N=6):
     
     avdl = docs_mean(inverse_doc)
     dl =docs_size(inverse_doc)
@@ -213,9 +213,9 @@ def BM25(query_tokens,inverse_doc,K=1.5,B=0.75,N=6):
     return pd.DataFrame(result.items(),columns=["Doc","Relevance"]).reset_index(drop=True) 
 
 
-def is_valid_query(query):
+def is_valid_query_eval(query):
     
-    tokens = [f"'{token}'" if token.lower() not in ("and", "or", "not") else token.lower() for token in query.split()]
+    tokens = ["1" if token.lower() not in ("and", "or", "not") else token.lower() for token in query.split()]
     try:
         eval(" ".join(tokens))
     except SyntaxError:
@@ -223,7 +223,18 @@ def is_valid_query(query):
     else:valid = True
     
     return valid
-
+def is_valid_query(query):
+    
+    tokens = ["1" if token.lower() not in ("and", "or", "not") else token.lower() for token in query.split()]
+    
+    if tokens[-1]=='not':return False
+    
+    try:
+        Boolean_model.evaluate(" ".join(tokens))
+        return True
+    except ValueError:
+        return False
+ 
 
 def Bool_model(query,inverse_doc,stemming):
     
@@ -244,12 +255,25 @@ def Bool_model(query,inverse_doc,stemming):
     #for each document, append terms that exists
     for term in tokens:
          search_result = inverse_doc[inverse_doc["term"] == term]
+         
+         #if term not in inverse doc
+         if len(search_result) == 0:
+             query = query.replace(term,"0")
+             continue
+         
          for i in range(len(search_result)):
             documents.setdefault(search_result.iloc[i,1], []).append(term)
     # print(documents)
     
     results=dict()
     
+    #when all terms are not in inverse doc
+    if len(documents)==0:
+        result = [(doc,0) for doc in list(inverse_doc["doc"].unique())]
+        Boolean_model.evaluate(query) 
+        return pd.DataFrame(result,columns=["Doc","Relevance"]).reset_index(drop=True)  
+     
+    #evaluation result for all docs where at least one term appear   
     for key , doc_terms in documents.items():
         
             query_copy = query
@@ -260,12 +284,9 @@ def Bool_model(query,inverse_doc,stemming):
                         cont =True
                 if cont: query_copy = query_copy.replace(t,"1") 
                 else:query_copy = query_copy.replace(t,"0")         
+     
+            results[key] = Boolean_model.evaluate(query_copy)   
             
-            try:
-               results[key] = eval(query_copy)   
-            except SyntaxError as e:
-                print(e)
-                return f" '{query}' is not a valid query"
                     
     # print(results)        
             
@@ -277,7 +298,7 @@ def Bool_model(query,inverse_doc,stemming):
 
 
 
-def RSV(query , processed_docs_dict , Vector_space_model,search_term,stemming):
+def RSV(query , processed_docs_dict , Vector_space_model,search_term,stemming,K,B):
     
     if Vector_space_model == "Scalar":
         return Scalar(query,processed_docs_dict).sort_values(by=["Relevance"],ascending=False)
@@ -289,15 +310,17 @@ def RSV(query , processed_docs_dict , Vector_space_model,search_term,stemming):
        return Jaccard(query,processed_docs_dict).sort_values(by=["Relevance"],ascending=False)
     
     elif Vector_space_model == "BM25": 
-         return BM25(query,processed_docs_dict).sort_values(by=["Relevance"],ascending=False)
+         return BM25(query,processed_docs_dict,K=K,B=B).sort_values(by=["Relevance"],ascending=False)
     # # print(result_df)
     elif Vector_space_model == "Bool" :
             # return pd.DataFrame([is_valid_query(search_term)],columns=["valid"])    
             return Bool_model(search_term,processed_docs_dict,stemming)    
         
         
-        
-        
+if __name__ == "__main__":
+            
+        # print(is_valid_query("terme term"))
+        print(is_valid_query("1 and 1 not"))
         
         
         
