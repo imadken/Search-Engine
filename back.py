@@ -3,6 +3,8 @@ import pandas as pd
 import nltk
 from math import sqrt,log10
 from Bool import Boolean_model
+from time import time
+
 
 
 def load_processed_docs(folder_path):
@@ -37,7 +39,7 @@ def load_descripteurs_and_inverse():
     """
 
     descripteurs, inverses = load_processed_docs(
-        "descripteurs"), load_processed_docs("inverse")
+        "lisa/descripteurs"), load_processed_docs("lisa/inverse")
 
     descripteurs.update(inverses)
 
@@ -49,7 +51,8 @@ def load_descripteurs_and_inverse():
 def split_tokenizer(txt):
     return [token for token in txt.split()]
 
-def regex_tokenizer(txt,regex='(?:[A-Za-z]\.)+|[A-Za-z]+[\-@]\d+(?:\.\d+)?|\d+[A-Za-z]+|\d+(?:[\.\,]\d+)?%?|\w+(?:[\-/]\w+)*'):
+# def regex_tokenizer(txt,regex='(?:[A-Za-z]\.)+|[A-Za-z]+[\-@]\d+(?:\.\d+)?|\d+[A-Za-z]+|\d+(?:[\.\,]\d+)?%?|\w+(?:[\-/]\w+)*'):
+def regex_tokenizer(txt,regex="(?:[A-Za-z]\.)+|[A-Za-z]+[\-@]\d+(?:\.\d+)?|\d+[A-Za-z]+|\d+(?:[\.\,]\d+)?%?|\w+(?:[\-/]\w+)*"):
     reg = nltk.RegexpTokenizer(regex)
     return reg.tokenize(txt)
 
@@ -88,32 +91,49 @@ def process_query(query,tokenize= "regex",stemming="Port"):
 def Scalar(query_tokens,inverse_doc):
     result=dict()
     # sum_w_i=dict()
+    query_tokens = list(set(query_tokens))
     for term in query_tokens:  
         search_result = inverse_doc[inverse_doc["term"] == term]
         for i in range(len(search_result)):
            result[search_result.iloc[i,1]] = result.get(search_result.iloc[i,1],0) + search_result.iloc[i,-1]
             #  sum_w_i[search_result.iloc[i,1]] = sum_w_i.get(search_result.iloc[i,1],0) + search_result.iloc[i,-1]
     
-    
+    # all_docs = inverse_doc['doc'].unique()
+    # for doc in all_docs:
+    #     if doc not in result.keys():
+    #         result[doc]=0
     # for key , value in sum_w_i.items():
         # result[key]  = value 
    
     # return result.items()        
     return pd.DataFrame(result.items(),columns=["Doc","Relevance"])   
 
+# def load_sum_w_i_2(inverse_doc):
+#       sum_w_i_2 = dict()
+#       for i in range(len(inverse_doc)):
+#                   sum_w_i_2[inverse_doc.iloc[i,1]] = sum_w_i_2.get(inverse_doc.iloc[i,1],0)+(pow(inverse_doc.iloc[i,-1],2))
+#       return sum_w_i_2
+    
+
+
 
 def Cosine(query_tokens,inverse_doc):
     
     result=dict()
-    
+    query_tokens = list(set(query_tokens))
     sum_w_i = dict()
-    sum_w_i_2 = dict()
+    # sum_w_i_2 = dict()
+    # sum_w_i_2 = sumpow2
     nbr_query_terms = dict()
+    grouped_data = inverse_doc.groupby("doc")["weight"].apply(lambda x: (x**2).sum())
+    sum_w_i_2 = grouped_data.to_dict()
     
     
-    for i in range(len(inverse_doc)):
-            sum_w_i_2[inverse_doc.iloc[i,1]] = sum_w_i_2.get(inverse_doc.iloc[i,1],0)+(pow(inverse_doc.iloc[i,-1],2))
-    
+
+    # s= time()
+    # for i in range(len(inverse_doc)):
+    #         sum_w_i_2[inverse_doc.iloc[i,1]] = sum_w_i_2.get(inverse_doc.iloc[i,1],0)+(pow(inverse_doc.iloc[i,-1],2))
+    # print(f"time for sumpow2 is {time()-s}")
     for term in query_tokens:  
         search_result = inverse_doc[inverse_doc["term"] == term]
 
@@ -123,12 +143,13 @@ def Cosine(query_tokens,inverse_doc):
             
      
     for key , value in sum_w_i.items():
- 
-         
         # result[key]  = value / (sqrt(sum_w_i_2[key])*sqrt(nbr_query_terms[key])) 
         result[key]  = value / (sqrt(sum_w_i_2[key])*sqrt(len(query_tokens))) 
         
-     
+    # all_docs = inverse_doc['doc'].unique()
+    # for doc in all_docs:
+    #     if doc not in result.keys():
+    #         result[doc]=0 
          
     # return result.items()        
     return pd.DataFrame(result.items(),columns=["Doc","Relevance"]).reset_index(drop=True) 
@@ -136,20 +157,20 @@ def Cosine(query_tokens,inverse_doc):
 
 def Jaccard(query_tokens,inverse_doc):
     result=dict()
-    
+    query_tokens = list(set(query_tokens))
     sum_w_i = dict()
-    sum_w_i_2 = dict()
+    # sum_w_i_2 = dict()
     nbr_query_terms = dict()
+
+    grouped_data = inverse_doc.groupby("doc")["weight"].apply(lambda x: (x**2).sum())
+    sum_w_i_2 = grouped_data.to_dict()
     
-    for i in range(len(inverse_doc)):
-            sum_w_i_2[inverse_doc.iloc[i,1]] = sum_w_i_2.get(inverse_doc.iloc[i,1],0)+(pow(inverse_doc.iloc[i,-1],2))
+    # for i in range(len(inverse_doc)):
+    #         sum_w_i_2[inverse_doc.iloc[i,1]] = sum_w_i_2.get(inverse_doc.iloc[i,1],0)+(pow(inverse_doc.iloc[i,-1],2))
     
     for term in query_tokens:  
         search_result = inverse_doc[inverse_doc["term"] == term]
-        
-       
-        # sum_v_i_ = 0
-        
+ 
         for i in range(len(search_result)):
        
             sum_w_i[search_result.iloc[i,1]] = sum_w_i.get(search_result.iloc[i,1],0) + search_result.iloc[i,-1]
@@ -159,9 +180,11 @@ def Jaccard(query_tokens,inverse_doc):
         
         # result[key]  = value / ((nbr_query_terms[key])+(sum_w_i_2[key])-value) 
         result[key]  = value / ((len(query_tokens))+(sum_w_i_2[key])-value) 
-       
-       
-         
+    
+    # all_docs = inverse_doc['doc'].unique()
+    # for doc in all_docs:
+    #     if doc not in result.keys():
+    #         result[doc]=0    
     # return result.items()        
     return pd.DataFrame(result.items(),columns=["Doc","Relevance"]) 
 
@@ -170,28 +193,32 @@ def doc_size(doc_name,inverse_doc):
     # return len(inverse_doc[inverse_doc["doc"] == doc_name])
     return inverse_doc[inverse_doc["doc"] == doc_name]["frequency"].sum()
     
-    
 def docs_mean(inverse_doc):
+    doc_sizes = inverse_doc.groupby("doc")["frequency"].sum()
+    return doc_sizes.mean()    
+# def docs_mean(inverse_doc):
     
-    docs = inverse_doc["doc"].unique()
-    sum = 0
+#     docs = inverse_doc["doc"].unique()
+#     sum = 0
+#     for doc in docs:
+#         sum += doc_size(doc,inverse_doc)
     
-    for doc in docs:
-        sum += doc_size(doc,inverse_doc)
-    
-    return sum/len(docs)  
-  
+#     return sum/len(docs)  
 def docs_size(inverse_doc):
-    dl = dict()
-    docs = inverse_doc["doc"].unique()
-    for doc in docs:
-        dl[doc] = doc_size(doc,inverse_doc)
-    return dl    
+    doc_sizes = inverse_doc.groupby("doc")["frequency"].sum().to_dict()
+    return doc_sizes  
+# def docs_size(inverse_doc):
+#     dl = dict()
+#     docs = inverse_doc["doc"].unique()
+#     for doc in docs:
+#         dl[doc] = doc_size(doc,inverse_doc)
+#     return dl    
 
-def BM25(query_tokens,inverse_doc,K=2,B=1.5,N=6):
-    
+def BM25(query_tokens,inverse_doc,K=2,B=1.5,N=5999):
+    s = time()
     avdl = docs_mean(inverse_doc)
     dl =docs_size(inverse_doc)
+    print(f"time for sumpow2 is {time()-s}")
     result = dict()
     
     for term in query_tokens: 
@@ -201,28 +228,21 @@ def BM25(query_tokens,inverse_doc,K=2,B=1.5,N=6):
         frequency = dict()
         n_i = len(search_result["doc"].unique())
         
-        
         for i in range(len(search_result)):
             frequency[search_result.iloc[i,1]] = search_result.iloc[i,2]
 
         for key , value in frequency.items():
   
            result[key]  = result.get(key,0) + ((value/(value+((B*dl[key]/avdl)+1-B)*K)) * log10((N-n_i+0.5)/(n_i+0.5)))
-         
+    
+    # all_docs = inverse_doc['doc'].unique()
+    # for doc in all_docs:
+    #     if doc not in result.keys():
+    #         result[doc]=0     
     # return result.items()        
     return pd.DataFrame(result.items(),columns=["Doc","Relevance"]).reset_index(drop=True) 
 
 
-def is_valid_query_eval(query):
-    
-    tokens = ["1" if token.lower() not in ("and", "or", "not") else token.lower() for token in query.split()]
-    try:
-        eval(" ".join(tokens))
-    except SyntaxError:
-        valid = False
-    else:valid = True
-    
-    return valid
 def is_valid_query(query):
     
     tokens = ["1" if token.lower() not in ("and", "or", "not") else token.lower() for token in query.split()]
@@ -285,19 +305,19 @@ def Bool_model(query,inverse_doc,stemming):
                 if cont: query_copy = query_copy.replace(t,"1") 
                 else:query_copy = query_copy.replace(t,"0")         
      
-            results[key] = Boolean_model.evaluate(query_copy)   
-            
-                    
-    # print(results)        
-            
-            
-     
+            results[key] = Boolean_model.evaluate(query_copy)
+               
+    # all_docs = inverse_doc['doc'].unique()
+    # for doc in all_docs:
+    #     if doc not in results.keys():
+    #         results[doc]=0
     return pd.DataFrame(results.items(),columns=["Doc","Relevance"]).reset_index(drop=True) 
     # return f" '{query}' is  a valid query"     
 
 
 
 
+# def RSV(query , processed_docs_dict , Vector_space_model,search_term,stemming,K,B,sumpow2):
 def RSV(query , processed_docs_dict , Vector_space_model,search_term,stemming,K,B):
     
     if Vector_space_model == "Scalar":
@@ -314,8 +334,15 @@ def RSV(query , processed_docs_dict , Vector_space_model,search_term,stemming,K,
     # # print(result_df)
     elif Vector_space_model == "Bool" :
             # return pd.DataFrame([is_valid_query(search_term)],columns=["valid"])    
-            return Bool_model(search_term,processed_docs_dict,stemming)    
-        
+            return Bool_model(search_term,processed_docs_dict,stemming)
+    else:raise ValueError(f"option -{Vector_space_model}- not Supported")        
+
+    
+    
+    
+    
+
+    
         
 if __name__ == "__main__":
             

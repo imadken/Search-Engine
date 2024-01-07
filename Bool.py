@@ -29,7 +29,7 @@ class Boolean_model():
         precedence = {'not': 3, 'and': 2, 'or': 1}
         return precedence.get(operator, 0)
     
-    @staticmethod# 0 or 1 and 0 not
+    @staticmethod
     def evaluate(query):
         
         postfix_expression = Boolean_model.infix_to_postfix(Boolean_model.tokenize(query))
