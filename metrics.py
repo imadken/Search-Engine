@@ -14,8 +14,6 @@ def plot(r=[],p=[]):
 def Precision(results_df,real_pertinent):
     
     selected_docs = len(results_df['Doc'].unique())
-
-    
     # print(results_df)
     # print(real_pertinent)
     # print(length)

@@ -90,13 +90,13 @@ def process_query(query,tokenize= "regex",stemming="Port"):
 
 def Scalar(query_tokens,inverse_doc):
     result=dict()
-    # sum_w_i=dict()
+
     query_tokens = list(set(query_tokens))
     for term in query_tokens:  
         search_result = inverse_doc[inverse_doc["term"] == term]
         for i in range(len(search_result)):
            result[search_result.iloc[i,1]] = result.get(search_result.iloc[i,1],0) + search_result.iloc[i,-1]
-            #  sum_w_i[search_result.iloc[i,1]] = sum_w_i.get(search_result.iloc[i,1],0) + search_result.iloc[i,-1]
+            
     
     # all_docs = inverse_doc['doc'].unique()
     # for doc in all_docs:
@@ -108,11 +108,7 @@ def Scalar(query_tokens,inverse_doc):
     # return result.items()        
     return pd.DataFrame(result.items(),columns=["Doc","Relevance"])   
 
-# def load_sum_w_i_2(inverse_doc):
-#       sum_w_i_2 = dict()
-#       for i in range(len(inverse_doc)):
-#                   sum_w_i_2[inverse_doc.iloc[i,1]] = sum_w_i_2.get(inverse_doc.iloc[i,1],0)+(pow(inverse_doc.iloc[i,-1],2))
-#       return sum_w_i_2
+
     
 
 
@@ -122,29 +118,27 @@ def Cosine(query_tokens,inverse_doc):
     result=dict()
     query_tokens = list(set(query_tokens))
     sum_w_i = dict()
-    # sum_w_i_2 = dict()
-    # sum_w_i_2 = sumpow2
+    # V_i = len(query_tokens)
+    V_i = 0
+   
     nbr_query_terms = dict()
     grouped_data = inverse_doc.groupby("doc")["weight"].apply(lambda x: (x**2).sum())
     sum_w_i_2 = grouped_data.to_dict()
     
     
-
-    # s= time()
-    # for i in range(len(inverse_doc)):
-    #         sum_w_i_2[inverse_doc.iloc[i,1]] = sum_w_i_2.get(inverse_doc.iloc[i,1],0)+(pow(inverse_doc.iloc[i,-1],2))
-    # print(f"time for sumpow2 is {time()-s}")
     for term in query_tokens:  
         search_result = inverse_doc[inverse_doc["term"] == term]
-
+        if len(search_result) >0: 
+            V_i += 1 
+        else:print(f" non existing {term}")    
         for i in range(len(search_result)):
             sum_w_i[search_result.iloc[i,1]] = sum_w_i.get(search_result.iloc[i,1],0) + search_result.iloc[i,-1]
             nbr_query_terms[search_result.iloc[i,1]] = nbr_query_terms.get(search_result.iloc[i,1],0) + 1
             
-     
+    # print(f"Vi {V_i}") 
     for key , value in sum_w_i.items():
-        # result[key]  = value / (sqrt(sum_w_i_2[key])*sqrt(nbr_query_terms[key])) 
-        result[key]  = value / (sqrt(sum_w_i_2[key])*sqrt(len(query_tokens))) 
+     
+        result[key]  = value / (sqrt(sum_w_i_2[key])*sqrt(V_i)) 
         
     # all_docs = inverse_doc['doc'].unique()
     # for doc in all_docs:
@@ -159,18 +153,25 @@ def Jaccard(query_tokens,inverse_doc):
     result=dict()
     query_tokens = list(set(query_tokens))
     sum_w_i = dict()
-    # sum_w_i_2 = dict()
+    # V_i = len(query_tokens)
     nbr_query_terms = dict()
+    
+    V_i = 0
+    
+    
 
     grouped_data = inverse_doc.groupby("doc")["weight"].apply(lambda x: (x**2).sum())
     sum_w_i_2 = grouped_data.to_dict()
     
-    # for i in range(len(inverse_doc)):
-    #         sum_w_i_2[inverse_doc.iloc[i,1]] = sum_w_i_2.get(inverse_doc.iloc[i,1],0)+(pow(inverse_doc.iloc[i,-1],2))
+   
     
     for term in query_tokens:  
         search_result = inverse_doc[inverse_doc["term"] == term]
- 
+        
+        if len(search_result) >0: 
+            V_i += 1 
+        else:print(f" non existing {term}")  
+            
         for i in range(len(search_result)):
        
             sum_w_i[search_result.iloc[i,1]] = sum_w_i.get(search_result.iloc[i,1],0) + search_result.iloc[i,-1]
@@ -178,8 +179,8 @@ def Jaccard(query_tokens,inverse_doc):
      
     for key , value in sum_w_i.items():
         
-        # result[key]  = value / ((nbr_query_terms[key])+(sum_w_i_2[key])-value) 
-        result[key]  = value / ((len(query_tokens))+(sum_w_i_2[key])-value) 
+      
+        result[key]  = value / ((V_i)+(sum_w_i_2[key])-value) 
     
     # all_docs = inverse_doc['doc'].unique()
     # for doc in all_docs:
@@ -190,36 +191,25 @@ def Jaccard(query_tokens,inverse_doc):
 
 
 def doc_size(doc_name,inverse_doc):
-    # return len(inverse_doc[inverse_doc["doc"] == doc_name])
+    
     return inverse_doc[inverse_doc["doc"] == doc_name]["frequency"].sum()
     
 def docs_mean(inverse_doc):
     doc_sizes = inverse_doc.groupby("doc")["frequency"].sum()
     return doc_sizes.mean()    
-# def docs_mean(inverse_doc):
-    
-#     docs = inverse_doc["doc"].unique()
-#     sum = 0
-#     for doc in docs:
-#         sum += doc_size(doc,inverse_doc)
-    
-#     return sum/len(docs)  
+
 def docs_size(inverse_doc):
     doc_sizes = inverse_doc.groupby("doc")["frequency"].sum().to_dict()
     return doc_sizes  
-# def docs_size(inverse_doc):
-#     dl = dict()
-#     docs = inverse_doc["doc"].unique()
-#     for doc in docs:
-#         dl[doc] = doc_size(doc,inverse_doc)
-#     return dl    
+  
 
-def BM25(query_tokens,inverse_doc,K=2,B=1.5,N=5999):
+def BM25(query_tokens,inverse_doc,K=2,B=1.5,N=6004):
     s = time()
     avdl = docs_mean(inverse_doc)
     dl =docs_size(inverse_doc)
-    print(f"time for sumpow2 is {time()-s}")
+    # print(f"time for sumpow2 is {time()-s}")
     result = dict()
+    
     
     for term in query_tokens: 
         

@@ -56,7 +56,7 @@ def search_engine(search_term,QueryId,tokenization, lancester, display_option, S
         if QueryId != "None" and type(result_df)!=str:
             
             # print(f"processed query {query}")
-            
+            print(f"\n real pertinent {relevant_docs[QueryId]}")
             real = real_precision_recall(result_df.iloc[:10],relevant_docs[QueryId])
             interpolated = interpolated_precision_recall(real)
             
@@ -65,7 +65,9 @@ def search_engine(search_term,QueryId,tokenization, lancester, display_option, S
             
             plot(interpolated["recall"],interpolated["precision"]) 
             
+            print("real")
             print(real)
+            print("\n interpolated")
             print(interpolated)
             
     
@@ -118,7 +120,7 @@ def search_engine(search_term,QueryId,tokenization, lancester, display_option, S
     # print(result_df.reset_index().columns)
     # return result_df.reset_index(drop=True)
     # return result_df.reset_index(drop=True).to_html(index=False)
-    return result_df.reset_index(drop=True),evaluation_df, plt
+    return result_df.reset_index(drop=True).round(6),evaluation_df.round(6), plt
     # return result_df[['doc', 'term', 'frequency', 'weight']].to_html(index=False)
 
 
